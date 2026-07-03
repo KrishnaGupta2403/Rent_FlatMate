@@ -1,0 +1,308 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  TENANT
+  OWNER
+  ADMIN
+}
+
+enum ListingStatus {
+  ACTIVE
+  FILLED
+  HIDDEN
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum GeneratorType {
+  AI
+  RULE_ENGINE
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+}
+
+enum NotificationType {
+  INTEREST
+  ACCEPTED
+  REJECTED
+  CHAT
+  LISTING
+  EMAIL
+}
+
+enum EmailStatus {
+  SENT
+  FAILED
+}
+
+model User {
+  id                       String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullName                 String               @map("full_name")
+  email                    String               @unique
+  password                 String
+  phone                    String?
+  profileImage             String?              @map("profile_image")
+  role                     Role
+  isVerified               Boolean              @default(false) @map("is_verified")
+  isActive                 Boolean              @default(true) @map("is_active")
+  createdAt                DateTime             @default(now()) @map("created_at")
+  updatedAt                DateTime             @updatedAt @map("updated_at")
+
+  tenantProfile            TenantProfile?
+  listings                 Listing[]            @relation("OwnerListings")
+  interestRequestsAsTenant InterestRequest[]    @relation("TenantInterestRequests")
+  interestRequestsAsOwner  InterestRequest[]    @relation("OwnerInterestRequests")
+  notifications            Notification[]       @relation("UserNotifications")
+  chatsAsOwner             Chat[]               @relation("OwnerChats")
+  chatsAsTenant            Chat[]               @relation("TenantChats")
+  messages                 Message[]            @relation("UserMessages")
+  reviewsGiven             Review[]             @relation("GivenReviews")
+  reviewsReceived          Review[]             @relation("ReceivedReviews")
+  adminLogs                AdminLog[]           @relation("AdminActions")
+  refreshTokens            RefreshToken[]       @relation("UserRefreshTokens")
+  savedListings            SavedListing[]       @relation("UserSavedListings")
+  compatibilityScores      CompatibilityScore[] @relation("TenantCompatibilityScores")
+
+  @@map("users")
+}
+
+model TenantProfile {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId               String    @unique @map("user_id") @db.Uuid
+  preferredLocation    String?   @map("preferred_location")
+  minBudget            Int?      @map("min_budget")
+  maxBudget            Int?      @map("max_budget")
+  moveInDate           DateTime? @map("move_in_date") @db.Date
+  roomType             String?   @map("room_type")
+  furnishingPreference String?   @map("furnishing_preference")
+  occupation           String?
+  gender               String?
+  genderPreference     String?   @map("gender_preference")
+  lifestyle            String?
+  smoking              String?
+  pets                 String?
+  food                 String?
+  bio                  String?   @db.Text
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_profiles")
+}
+
+model Listing {
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId             String               @map("owner_id") @db.Uuid
+  title               String
+  description         String               @db.Text
+  location            String
+  latitude            Decimal?             @db.Decimal(9, 6)
+  longitude           Decimal?             @db.Decimal(9, 6)
+  rent                Int
+  securityDeposit     Int                  @map("security_deposit")
+  availableFrom       DateTime             @map("available_from") @db.Date
+  roomType            String               @map("room_type")
+  furnishingStatus    String               @map("furnishing_status")
+  occupancy           Int
+  status              ListingStatus        @default(ACTIVE)
+  deletedAt           DateTime?            @map("deleted_at")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+
+  owner               User                 @relation("OwnerListings", fields: [ownerId], references: [id], onDelete: Cascade)
+  images              ListingImage[]
+  listingAmenities    ListingAmenity[]
+  compatibilityScores CompatibilityScore[]
+  interestRequests    InterestRequest[]
+  chats               Chat[]
+  savedByUsers        SavedListing[]
+
+  @@map("listings")
+}
+
+model ListingImage {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId  String   @map("listing_id") @db.Uuid
+  imageUrl   String   @map("image_url")
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("listing_images")
+}
+
+model Amenity {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String           @unique
+  listingAmenities ListingAmenity[]
+
+  @@map("amenities")
+}
+
+model ListingAmenity {
+  listingId String @map("listing_id") @db.Uuid
+  amenityId String @map("amenity_id") @db.Uuid
+
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  amenity   Amenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, amenityId])
+  @@map("listing_amenities")
+}
+
+model CompatibilityScore {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String        @map("tenant_id") @db.Uuid
+  listingId   String        @map("listing_id") @db.Uuid
+  score       Int
+  explanation String        @db.Text
+  generatedBy GeneratorType @map("generated_by")
+  generatedAt DateTime      @default(now()) @map("generated_at")
+
+  tenant      User          @relation("TenantCompatibilityScores", fields: [tenantId], references: [id], onDelete: Cascade)
+  listing     Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("compatibility_scores")
+}
+
+model InterestRequest {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String        @map("tenant_id") @db.Uuid
+  ownerId   String        @map("owner_id") @db.Uuid
+  listingId String        @map("listing_id") @db.Uuid
+  status    RequestStatus @default(PENDING)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  tenant    User          @relation("TenantInterestRequests", fields: [tenantId], references: [id], onDelete: Cascade)
+  owner     User          @relation("OwnerInterestRequests", fields: [ownerId], references: [id], onDelete: Cascade)
+  listing   Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("interest_requests")
+}
+
+model Chat {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId String    @map("listing_id") @db.Uuid
+  ownerId   String    @map("owner_id") @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  listing   Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  owner     User      @relation("OwnerChats", fields: [ownerId], references: [id], onDelete: Cascade)
+  tenant    User      @relation("TenantChats", fields: [tenantId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@map("chats")
+}
+
+model Message {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chatId      String      @map("chat_id") @db.Uuid
+  senderId    String      @map("sender_id") @db.Uuid
+  message     String      @db.Text
+  messageType MessageType @default(TEXT) @map("message_type")
+  isRead      Boolean     @default(false) @map("is_read")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  chat        Chat        @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender      User        @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Notification {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  title     String
+  message   String           @db.Text
+  type      NotificationType
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user      User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model SavedListing {
+  userId    String   @map("user_id") @db.Uuid
+  listingId String   @map("listing_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation("UserSavedListings", fields: [userId], references: [id], onDelete: Cascade)
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([userId, listingId])
+  @@map("saved_listings")
+}
+
+model Review {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reviewerId  String   @map("reviewer_id") @db.Uuid
+  revieweeId  String   @map("reviewee_id") @db.Uuid
+  rating      Int
+  review      String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  reviewer    User     @relation("GivenReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewee    User     @relation("ReceivedReviews", fields: [revieweeId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+model AdminLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  adminId   String   @map("admin_id") @db.Uuid
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  admin     User     @relation("AdminActions", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("admin_logs")
+}
+
+model EmailLog {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipientEmail String      @map("recipient_email")
+  subject        String
+  status         EmailStatus
+  sentAt         DateTime    @default(now()) @map("sent_at")
+
+  @@map("email_logs")
+}
+
+model RefreshToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation("UserRefreshTokens", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}

@@ -1,0 +1,314 @@
+================================================================================
+                      RENT FLATMATE - API ENDPOINTS FOR POSTMAN
+================================================================================
+Base URL: http://localhost:3000/api
+Authentication: For protected endpoints, add header:
+  Authorization: Bearer <your_access_token>
+Content-Type: application/json (unless uploading files)
+
+================================================================================
+1. AUTH MODULE (/api/auth) - Public
+================================================================================
+[POST] /api/auth/register
+  Description: Register a new user account (Role: OWNER or TENANT or ADMIN)
+  Body (JSON):
+  {
+    "fullName": "John Doe",
+    "email": "john@example.com",
+    "password": "password123",
+    "phone": "9876543210",
+    "role": "TENANT"
+  }
+
+[POST] /api/auth/login
+  Description: Login and obtain access & refresh tokens
+  Body (JSON):
+  {
+    "email": "john@example.com",
+    "password": "password123"
+  }
+
+[POST] /api/auth/refresh
+  Description: Get a new access token using a refresh token
+  Body (JSON):
+  {
+    "refreshToken": "<your_refresh_token>"
+  }
+
+[POST] /api/auth/forgot-password
+  Description: Request a password reset email/token
+  Body (JSON):
+  {
+    "email": "john@example.com"
+  }
+
+[POST] /api/auth/reset-password
+  Description: Reset password using token
+  Body (JSON):
+  {
+    "token": "<reset_token_received_in_email>",
+    "newPassword": "newpassword123"
+  }
+
+[POST] /api/auth/logout
+  Description: Invalidate refresh token and logout
+  Body (JSON):
+  {
+    "refreshToken": "<your_refresh_token>"
+  }
+
+================================================================================
+2. USERS MODULE (/api/users) - Protected (Any Authenticated User)
+================================================================================
+[GET] /api/users/profile
+  Description: Get current logged-in user profile details
+
+[PATCH] /api/users/profile
+  Description: Update user profile details
+  Body (JSON):
+  {
+    "fullName": "John Updated",
+    "phone": "9111111111",
+    "profileImage": "https://example.com/avatar.jpg"
+  }
+
+[PATCH] /api/users/password
+  Description: Change password for current logged-in user
+  Body (JSON):
+  {
+    "currentPassword": "password123",
+    "newPassword": "newpassword456"
+  }
+
+================================================================================
+3. OWNER MODULE (/api/owner) - Protected (Role: OWNER)
+================================================================================
+[GET] /api/owner/dashboard
+  Description: Get summary counts of active listings, filled listings, and requests
+
+[GET] /api/owner/listings
+  Description: View all listings created by logged-in owner
+  Query Params: ?status=ACTIVE&limit=20&offset=0
+
+[POST] /api/owner/listings
+  Description: Create a new property listing
+  Body (JSON):
+  {
+    "title": "Spacious Sea-View Room in Bandra",
+    "description": "Modern furnished bedroom with attached balcony.",
+    "location": "Bandra West, Mumbai",
+    "rent": 35000,
+    "securityDeposit": 100000,
+    "availableFrom": "2026-08-01",
+    "roomType": "Private",
+    "furnishingStatus": "Furnished",
+    "occupancy": 1
+  }
+
+[GET] /api/owner/listings/:id
+  Description: Get specific listing details owned by logged-in owner
+
+[PATCH] /api/owner/listings/:id
+  Description: Edit listing details
+  Body (JSON):
+  {
+    "rent": 34000,
+    "furnishingStatus": "Semi-Furnished"
+  }
+
+[DELETE] /api/owner/listings/:id
+  Description: Soft-delete listing (sets deletedAt timestamp)
+
+[PATCH] /api/owner/listings/:id/fill
+  Description: Mark listing status as FILLED (hides from search results)
+
+[POST] /api/owner/listings/:id/images
+  Description: Upload photos to a listing (via image URLs or form upload)
+  Body (JSON):
+  {
+    "imageUrls": ["https://example.com/photo1.jpg", "https://example.com/photo2.jpg"]
+  }
+  * Note: Also supports multipart/form-data file uploads via field "images"
+
+[DELETE] /api/owner/listings/:id/images/:imageId
+  Description: Remove an uploaded photo from a listing
+
+================================================================================
+4. PUBLIC SEARCH & LISTING MODULE (/api/listings & /api/search) - Public / Tenant
+================================================================================
+[GET] /api/listings
+  Description: Public fetch of active listings with mandatory and optional filters
+  Query Params:
+    ?location=Mumbai
+    &minRent=10000
+    &maxRent=50000
+    &roomType=Private        (Private / Shared / Whole Apartment)
+    &furnishingStatus=Furnished  (Furnished / Semi-Furnished / Unfurnished)
+    &availableFrom=2026-08-01
+    &sortBy=rent_asc         (rent_asc / rent_desc / date_desc / date_asc)
+    &limit=20&offset=0
+
+[GET] /api/listings/:id
+  Description: View full details of a specific active listing
+
+[GET] /api/search
+  Description: Tenant search endpoint (accepts exact same query params as /api/listings)
+
+================================================================================
+5. TENANT MODULE (/api/tenant) - Protected (Role: TENANT)
+================================================================================
+[GET] /api/tenant/preferences
+  Description: Get logged-in tenant's profile and matching preferences
+
+[PATCH] /api/tenant/preferences
+  Description: Create or update tenant profile & matching preferences
+  Body (JSON):
+  {
+    "preferredLocation": "Bandra, Mumbai",
+    "minBudget": 20000,
+    "maxBudget": 45000,
+    "moveInDate": "2026-08-01",
+    "roomType": "Private",
+    "furnishingPreference": "Furnished",
+    "occupation": "Software Engineer",
+    "gender": "Male",
+    "genderPreference": "Any",
+    "lifestyle": "Early Riser",
+    "smoking": "No",
+    "pets": "No",
+    "food": "Non-Vegetarian",
+    "bio": "Quiet professional looking for a clean flatmate."
+  }
+
+[GET] /api/tenant/favorites
+  Description: List all bookmarked/saved listings for logged-in tenant
+
+[POST] /api/tenant/favorites/:listingId
+  Description: Add a listing to favorites
+
+[DELETE] /api/tenant/favorites/:listingId
+  Description: Remove a listing from favorites
+
+================================================================================
+6. AI COMPATIBILITY ENGINE MODULE (/api/ai/compatibility) - Protected (Role: TENANT)
+================================================================================
+[GET] /api/ai/compatibility/:listingId
+  Description: Get AI (or rule-based fallback) compatibility score between logged-in
+               tenant profile and a specific listing. Returns cached score if profile
+               and listing haven't been modified since last generation.
+  Response Example:
+  {
+    "listingId": "uuid",
+    "score": 95,
+    "explanation": "High budget and location alignment...",
+    "generatedBy": "AI",  // or "RULE_ENGINE"
+    "cached": false
+  }
+
+[GET] /api/ai/compatibility/sort/all
+  Description: Fetch all active listings sorted descending by compatibility score
+               against the logged-in tenant profile.
+
+================================================================================
+7. INTEREST REQUEST MODULE (/api/interests) - Protected (Tenant & Owner)
+================================================================================
+[POST] /api/interests/:listingId
+  Description: (Tenant Only) Send an interest request for a listing. Creates a PENDING row
+               and sends an in-app notification to the listing owner.
+
+[GET] /api/interests/tenant
+  Description: (Tenant Only) View all interest requests sent by logged-in tenant
+
+[DELETE] /api/interests/:id
+  Description: (Tenant Only) Cancel a still-pending interest request
+
+[GET] /api/interests/owner
+  Description: (Owner Only) View all interest requests received on owner's listings
+  Query Params: ?status=PENDING  (PENDING / ACCEPTED / REJECTED / CANCELLED)
+
+[PATCH] /api/interests/:id/accept
+  Description: (Owner Only) Accept an interest request. Triggers in-app notification
+               and email to the tenant. Required before a Chat can be created!
+
+[PATCH] /api/interests/:id/reject
+  Description: (Owner Only) Reject an interest request. Triggers notification and email.
+
+================================================================================
+8. CHAT & SOCKET.IO MODULE (/api/chats) - Protected (Participants Only)
+================================================================================
+* Note: Real-time messaging uses Socket.IO at http://localhost:3000 with JWT auth
+  handshake: io("http://localhost:3000", { auth: { token: "<jwt_token>" } })
+  Socket Events: joinRoom, sendMessage, typing, stopTyping, markAsRead, newNotification
+
+[POST] /api/chats
+  Description: Create or retrieve a 1-on-1 chat room.
+               * CORE BUSINESS RULE: Only allowed if an ACCEPTED interest request exists!
+  Body (JSON):
+  {
+    "listingId": "<listing_uuid>",
+    "tenantId": "<tenant_uuid>",
+    "ownerId": "<owner_uuid>"
+  }
+
+[GET] /api/chats
+  Description: Get all active chats for logged-in user
+
+[GET] /api/chats/:id/messages
+  Description: Get paginated chat message history
+  Query Params: ?limit=50&offset=0
+
+[POST] /api/chats/:id/messages
+  Description: REST fallback to send a message (persists to DB and emits socket event)
+  Body (JSON):
+  {
+    "message": "Hello! Let us discuss the lease agreement.",
+    "messageType": "TEXT"
+  }
+
+[PATCH] /api/chats/:id/read
+  Description: Mark all unread messages in a chat room as read
+
+================================================================================
+9. NOTIFICATION MODULE (/api/notifications) - Protected (Any Authenticated User)
+================================================================================
+[GET] /api/notifications
+  Description: Get user's real-time notification feed (Interest, Acceptance, Chat, etc.)
+  Query Params: ?limit=50&offset=0
+
+[PATCH] /api/notifications/:id/read
+  Description: Mark a single notification as read (isRead: true)
+
+[PATCH] /api/notifications/read-all
+  Description: Mark all unread notifications for the user as read
+
+================================================================================
+10. ADMIN MODULE (/api/admin) - Protected (Role: ADMIN)
+================================================================================
+[GET] /api/admin/dashboard
+  Description: Get platform health metrics (activeUsers, totalListings, filledListings,
+               activeChats, totalInterests)
+
+[GET] /api/admin/users
+  Description: List all registered users with moderation filters
+  Query Params: ?role=TENANT&isActive=true&limit=50&offset=0
+
+[PATCH] /api/admin/users/:id/block
+  Description: Block user account (isActive: false). Instantly revokes JWT access
+               and logs action in AdminLog table.
+
+[PATCH] /api/admin/users/:id/unblock
+  Description: Restore user account access (isActive: true)
+
+[DELETE] /api/admin/users/:id
+  Description: Permanently delete user account and cascade to related records
+
+[GET] /api/admin/listings
+  Description: View all active property listings on the platform
+
+[PATCH] /api/admin/listings/:id/spam
+  Description: Mark listing as spam (status: HIDDEN). Hides from search results,
+               logs in AdminLog, and notifies owner.
+
+[DELETE] /api/admin/listings/:id
+  Description: Soft-delete listing by admin. Logs in AdminLog and notifies owner.
+================================================================================

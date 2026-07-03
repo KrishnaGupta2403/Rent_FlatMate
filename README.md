@@ -135,7 +135,7 @@ rentflatmate/
 │   ├── app.js                     # Express application configurations
 │   └── server.js                  # App bootstrap and Socket.IO listener
 │
-└── client/
+└── frontend/
     ├── app/                       # Next.js App Router (Layouts & Pages)
     │   ├── admin/                 # Admin operations dashboard
     │   ├── auth/                  # Login, register, and reset passwords
@@ -165,8 +165,8 @@ cd rentflatmate
 # Install backend dependencies
 cd backend && npm install
 
-# Install client dependencies
-cd ../client && npm install
+# Install frontend dependencies
+cd ../frontend && npm install
 ```
 
 ### 2. Configure Environment Variables
@@ -190,7 +190,7 @@ SMTP_PASS=your_smtp_password
 EMAIL_FROM="RentFlatmate AI <no-reply@rentflatmate.com>"
 ```
 
-**Client (`client/.env.local`):**
+**Frontend (`frontend/.env.local`):**
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
 NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
@@ -210,7 +210,7 @@ cd backend
 npm run dev
 
 # Terminal 2: Start Next.js Development Server (http://localhost:3001)
-cd client
+cd frontend
 npm run dev
 ```
 
