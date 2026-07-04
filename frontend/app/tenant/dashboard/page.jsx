@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '../../../components/common/ProtectedRoute';
-import NotificationBell from '../../../components/notification/NotificationBell';
+
 import { tenantService } from '../../../services/tenantService';
 import { listingService } from '../../../services/listingService';
 import ListingCard from '../../../components/cards/ListingCard';
@@ -50,7 +50,6 @@ export default function TenantDashboard() {
           </div>
 
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <NotificationBell />
             <Link href="/tenant/profile" className="btn-secondary" style={{ padding: '10px 20px', fontSize: '0.9rem' }}>
               ⚙️ My Preferences
             </Link>

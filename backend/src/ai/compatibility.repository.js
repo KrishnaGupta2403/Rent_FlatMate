@@ -31,12 +31,32 @@ exports.getListingById = async (listingId) => {
   });
 };
 
-exports.getAllActiveListings = async () => {
+exports.getAllActiveListings = async (filters = {}) => {
+  const { city, location, maxRent } = filters;
+  const where = {
+    deletedAt: null,
+    status: 'ACTIVE'
+  };
+
+  const effectiveLoc = location || city;
+  if (effectiveLoc && typeof effectiveLoc === 'string' && effectiveLoc.trim() !== '') {
+    where.location = {
+      contains: effectiveLoc.trim(),
+      mode: 'insensitive'
+    };
+  }
+
+  if (maxRent !== undefined && maxRent !== null && maxRent !== '') {
+    const rentVal = parseInt(maxRent, 10);
+    if (!isNaN(rentVal)) {
+      where.rent = {
+        lte: rentVal
+      };
+    }
+  }
+
   return await prisma.listing.findMany({
-    where: {
-      deletedAt: null,
-      status: 'ACTIVE'
-    },
+    where,
     include: {
       listingAmenities: {
         include: { amenity: true }

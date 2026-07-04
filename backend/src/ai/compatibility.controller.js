@@ -3,7 +3,7 @@ const aiService = require('./compatibility.service');
 exports.getSortedListings = async (req, res) => {
   try {
     const userId = req.user.id;
-    const listings = await aiService.getSortedListingsForTenant(userId);
+    const listings = await aiService.getSortedListingsForTenant(userId, req.query);
     return res.status(200).json({
       message: 'Listings sorted by compatibility score retrieved successfully',
       count: listings.length,

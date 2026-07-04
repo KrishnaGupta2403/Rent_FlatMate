@@ -108,8 +108,8 @@ exports.getCompatibilityScore = async (userId, listingId) => {
   };
 };
 
-exports.getSortedListingsForTenant = async (userId) => {
-  const listings = await aiRepo.getAllActiveListings();
+exports.getSortedListingsForTenant = async (userId, filters = {}) => {
+  const listings = await aiRepo.getAllActiveListings(filters);
   if (!listings || listings.length === 0) {
     return [];
   }

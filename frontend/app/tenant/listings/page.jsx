@@ -14,26 +14,43 @@ export default function TenantListingsPage() {
   const [topMatchModal, setTopMatchModal] = useState(null);
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
   const fetchListings = async (customParams = {}) => {
     setLoading(true);
     try {
+      const pageToFetch = customParams.hasOwnProperty('page') ? customParams.page : currentPage;
+      
       if (aiSort) {
-        const res = await aiService.getSortedListings();
+        const params = {};
+        if (searchCity) params.city = searchCity;
+        if (maxRent) params.maxRent = maxRent;
+        const res = await aiService.getSortedListings(params);
         const list = res?.listings || res?.sortedListings || (Array.isArray(res) ? res : []);
         setListings(list);
-        if (list.length > 0) {
+        setTotalCount(list.length);
+        setTotalPages(Math.ceil(list.length / 10) || 1);
+        if (list.length > 0 && pageToFetch === 1) {
           setTopMatchModal(list[0]);
         }
       } else {
-        const params = { ...customParams };
+        const params = { page: pageToFetch, limit: 10, ...customParams };
         if (searchCity) params.city = searchCity;
         if (maxRent) params.maxRent = maxRent;
 
         const res = await listingService.getPublicListings(params);
         if (res && res.listings) {
           setListings(res.listings);
+          setTotalPages(res.pagination?.totalPages || 1);
+          setTotalCount(res.pagination?.totalCount || 0);
+          setCurrentPage(res.pagination?.currentPage || pageToFetch);
         } else if (Array.isArray(res)) {
           setListings(res);
+          setTotalPages(1);
+          setTotalCount(res.length);
         }
       }
     } catch (err) {
@@ -47,10 +64,16 @@ export default function TenantListingsPage() {
     setLoadingSuggestion(true);
     try {
       setAiSort(true);
-      const res = await aiService.getSortedListings();
+      setCurrentPage(1);
+      const params = {};
+      if (searchCity) params.city = searchCity;
+      if (maxRent) params.maxRent = maxRent;
+      const res = await aiService.getSortedListings(params);
       const list = res?.listings || res?.sortedListings || (Array.isArray(res) ? res : []);
       if (list.length > 0) {
         setListings(list);
+        setTotalCount(list.length);
+        setTotalPages(Math.ceil(list.length / 10) || 1);
         setTopMatchModal(list[0]);
       } else {
         alert('No properties available for AI matching.');
@@ -64,14 +87,29 @@ export default function TenantListingsPage() {
   };
 
   useEffect(() => {
-    fetchListings();
+    setCurrentPage(1);
+    fetchListings({ page: 1 });
   }, [aiSort]);
 
   const handleSearch = (e) => {
     e.preventDefault();
     setAiSort(false);
-    fetchListings();
+    setCurrentPage(1);
+    fetchListings({ page: 1 });
   };
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    setCurrentPage(newPage);
+    if (!aiSort) {
+      fetchListings({ page: newPage });
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const displayedListings = aiSort 
+    ? listings.slice((currentPage - 1) * 10, currentPage * 10) 
+    : listings;
 
   return (
     <div>
@@ -142,16 +180,68 @@ export default function TenantListingsPage() {
         <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-secondary)' }}>
           {aiSort ? '🤖 AI Engine calculates compatibility scores...' : 'Loading homes...'}
         </div>
-      ) : listings.length === 0 ? (
+      ) : displayedListings.length === 0 ? (
         <div className="glass-panel" style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
           No properties match your exact criteria. Try broadening your filter or clearing search!
         </div>
       ) : (
-        <div className="grid-cards">
-          {listings.map((l) => (
-            <ListingCard key={l.id} listing={l} />
-          ))}
-        </div>
+        <>
+          <div className="grid-cards">
+            {displayedListings.map((l) => (
+              <ListingCard key={l.id} listing={l} />
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              gap: '16px', 
+              marginTop: '40px',
+              padding: '12px 24px',
+              borderRadius: '20px',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backdropFilter: 'blur(10px)',
+              width: 'fit-content',
+              margin: '40px auto 0 auto'
+            }}>
+              <button 
+                disabled={currentPage === 1}
+                onClick={() => handlePageChange(currentPage - 1)}
+                className="btn-secondary"
+                style={{ 
+                  padding: '8px 16px', 
+                  fontSize: '0.85rem',
+                  opacity: currentPage === 1 ? 0.4 : 1,
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                ← Previous
+              </button>
+              
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                Page <strong style={{ color: 'var(--text-primary)' }}>{currentPage}</strong> of <strong style={{ color: 'var(--text-primary)' }}>{totalPages}</strong> <span style={{ color: 'var(--text-muted)', marginLeft: '4px' }}>({totalCount} items)</span>
+              </span>
+
+              <button 
+                disabled={currentPage === totalPages}
+                onClick={() => handlePageChange(currentPage + 1)}
+                className="btn-secondary"
+                style={{ 
+                  padding: '8px 16px', 
+                  fontSize: '0.85rem',
+                  opacity: currentPage === totalPages ? 0.4 : 1,
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Next →
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* AI Top Recommendation Popup Modal */}

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '../../../components/common/ProtectedRoute';
-import NotificationBell from '../../../components/notification/NotificationBell';
+
 import { ownerService } from '../../../services/ownerService';
 import { STATUS_COLORS, ROLES } from '../../../constants';
 import BorderGlow from '../../../components/ui/BorderGlow';
@@ -47,7 +47,6 @@ export default function OwnerDashboard() {
           </div>
 
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <NotificationBell />
             <Link href="/owner/requests" className="btn-secondary" style={{ padding: '10px 20px', fontSize: '0.9rem' }}>
               📨 Pending Requests ({pendingCount})
             </Link>

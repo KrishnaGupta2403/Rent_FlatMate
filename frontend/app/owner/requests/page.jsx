@@ -121,7 +121,7 @@ export default function OwnerRequestsPage() {
                     Property: {req.listing?.title || `Listing #${req.listingId?.slice(0, 8)}`}
                   </h3>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>
-                    Applicant Tenant: <strong style={{ color: 'var(--text-primary)' }}>{req.tenant?.email || `User #${req.tenantId?.slice(0, 8)}`}</strong>
+                    Applicant Tenant: <strong style={{ color: 'var(--text-primary)' }}>{req.tenant?.fullName || req.tenant?.email || `User #${req.tenantId?.slice(0, 8)}`}</strong>
                   </p>
                   {req.message && (
                     <p style={{ fontSize: '0.88rem', color: '#cbd5e1', marginTop: '10px', fontStyle: 'italic', background: 'rgba(0,0,0,0.25)', padding: '10px 14px', borderRadius: '10px', borderLeft: '3px solid var(--accent-primary)' }}>

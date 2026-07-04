@@ -83,18 +83,22 @@ export default function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="glass-panel animate-fade-in" style={{
+        <div className="animate-fade-in" style={{
           position: 'absolute',
           right: 0,
           top: '48px',
           width: '340px',
           maxHeight: '420px',
           overflowY: 'auto',
-          zIndex: 200,
+          zIndex: 99999,
           padding: '16px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px'
+          gap: '12px',
+          background: '#13111a',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          borderRadius: '16px',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
             <strong style={{ fontSize: '0.95rem' }}>Notifications</strong>

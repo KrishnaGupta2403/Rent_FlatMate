@@ -16,15 +16,29 @@ export default function AddListingPage() {
   const [photoPreviews, setPhotoPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [availableFrom, setAvailableFrom] = useState(new Date().toISOString().split('T')[0]);
+  const [roomType, setRoomType] = useState('Single');
+  const [furnishing, setFurnishing] = useState('Semi-Furnished');
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 5) {
-      alert('You can upload a maximum of 5 photos.');
+    const selectedFiles = Array.from(e.target.files);
+    if (photos.length + selectedFiles.length > 5) {
+      alert('You can upload a maximum of 5 photos in total.');
       return;
     }
-    setPhotos(files);
-    const previews = files.map(file => URL.createObjectURL(file));
+    const updatedPhotos = [...photos, ...selectedFiles];
+    setPhotos(updatedPhotos);
+    const previews = updatedPhotos.map(file => URL.createObjectURL(file));
+    setPhotoPreviews(previews);
+  };
+
+  const removePhoto = (index) => {
+    const updatedPhotos = photos.filter((_, idx) => idx !== index);
+    setPhotos(updatedPhotos);
+    if (photoPreviews[index]) {
+      URL.revokeObjectURL(photoPreviews[index]);
+    }
+    const previews = photoPreviews.filter((_, idx) => idx !== index);
     setPhotoPreviews(previews);
   };
 
@@ -39,6 +53,9 @@ export default function AddListingPage() {
         rent: parseFloat(rent),
         city,
         location: location || city,
+        availableFrom,
+        roomType,
+        furnishing,
       });
 
       const listingId = res?.listing?.id || res?.id;
@@ -115,6 +132,43 @@ export default function AddListingPage() {
               </div>
             </div>
 
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>
+                  Available From *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={availableFrom}
+                  onChange={(e) => setAvailableFrom(e.target.value)}
+                  style={{ background: 'var(--bg-secondary)' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>
+                  Room Type *
+                </label>
+                <select value={roomType} onChange={(e) => setRoomType(e.target.value)} style={{ background: 'var(--bg-secondary)' }}>
+                  <option value="Single">Single Room</option>
+                  <option value="Shared">Shared Room</option>
+                  <option value="Entire Apartment">Entire Apartment</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>
+                  Furnishing *
+                </label>
+                <select value={furnishing} onChange={(e) => setFurnishing(e.target.value)} style={{ background: 'var(--bg-secondary)' }}>
+                  <option value="Furnished">Furnished</option>
+                  <option value="Semi-Furnished">Semi-Furnished</option>
+                  <option value="Unfurnished">Unfurnished</option>
+                </select>
+              </div>
+            </div>
+
             <div>
               <label style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>
                 Specific Area / Neighborhood *
@@ -149,6 +203,31 @@ export default function AddListingPage() {
                   {photoPreviews.map((src, idx) => (
                     <div key={idx} style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '2px solid var(--accent-primary)', position: 'relative' }}>
                       <img src={src} alt={`Preview ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(idx)}
+                        style={{
+                          position: 'absolute',
+                          top: '2px',
+                          right: '2px',
+                          background: 'rgba(239, 68, 68, 0.9)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '18px',
+                          height: '18px',
+                          fontSize: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          zIndex: 10
+                        }}
+                        title="Remove photo"
+                      >
+                        ✕
+                      </button>
                     </div>
                   ))}
                 </div>

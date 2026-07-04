@@ -22,7 +22,8 @@ exports.getOwnerRequests = async (req, res) => {
     return res.status(200).json({
       message: 'Owner interest requests retrieved successfully',
       count: requests.length,
-      requests
+      requests,
+      interests: requests
     });
   } catch (error) {
     const status = error.statusCode || 500;
@@ -37,7 +38,8 @@ exports.getTenantRequests = async (req, res) => {
     return res.status(200).json({
       message: 'Tenant interest requests retrieved successfully',
       count: requests.length,
-      requests
+      requests,
+      interests: requests
     });
   } catch (error) {
     const status = error.statusCode || 500;

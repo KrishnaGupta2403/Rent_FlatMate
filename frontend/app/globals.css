@@ -101,10 +101,27 @@ input:focus, select:focus, textarea:focus {
 }
 
 .glass-nav {
-  background: rgba(12, 7, 20, 0.45);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: fixed;
+  top: 16px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: 92%;
+  max-width: 1280px;
+  z-index: 1000;
+  background: 
+    linear-gradient(110deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(255, 255, 255, 0.12) 48%, rgba(255, 255, 255, 0) 54%, rgba(255, 255, 255, 0.05) 75%),
+    linear-gradient(135deg, rgba(20, 12, 35, 0.45) 0%, rgba(13, 8, 22, 0.7) 60%, rgba(30, 20, 50, 0.45) 100%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  box-shadow: 
+    0 12px 40px 0 rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.25),
+    inset 0 8px 16px -8px rgba(255, 255, 255, 0.15);
+  padding: 14px 0;
+  transition: all 0.3s ease;
 }
 
 /* Buttons */
@@ -161,7 +178,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .page-wrapper {
-  padding: 40px 0;
+  padding: 100px 0 40px 0;
   min-height: calc(100vh - 160px);
 }
 
@@ -190,4 +207,31 @@ input:focus, select:focus, textarea:focus {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* Navbar Glass Link Hover Effects */
+.glass-nav nav a {
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-nav nav a:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+/* Secondary Button Glass Reflection Hover Upgrade */
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }

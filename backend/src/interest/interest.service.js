@@ -92,6 +92,26 @@ exports.updateStatusByOwner = async (ownerId, requestId, newStatus) => {
 
   const updatedRequest = await interestRepo.updateRequestStatus(requestId, newStatus);
 
+  if (newStatus === 'ACCEPTED') {
+    try {
+      const chatRepo = require('../chat/chat.repository');
+      const existingChat = await chatRepo.findChatByParticipants(
+        updatedRequest.listingId,
+        updatedRequest.tenantId,
+        updatedRequest.ownerId
+      );
+      if (!existingChat) {
+        await chatRepo.createChat({
+          listingId: updatedRequest.listingId,
+          tenantId: updatedRequest.tenantId,
+          ownerId: updatedRequest.ownerId
+        });
+      }
+    } catch (chatErr) {
+      console.error('Failed to auto-create chat room on accept:', chatErr.message);
+    }
+  }
+
   try {
     const notifService = require('../notifications/notification.service');
     const emailService = require('../notifications/email.service');

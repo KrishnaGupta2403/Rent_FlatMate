@@ -6,7 +6,7 @@ import { chatService } from '../../services/chatService';
 
 export default function ChatBox({ chatId, recipientEmail }) {
   const { user } = useAuth();
-  const { socket } = useSocket();
+  const { socket, setHasUnreadChats } = useSocket();
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState('');
   const [loading, setLoading] = useState(true);
@@ -30,6 +30,9 @@ export default function ChatBox({ chatId, recipientEmail }) {
         } else if (Array.isArray(res)) {
           setMessages(res);
         }
+        // Mark messages as read on the backend
+        await chatService.markAsRead(chatId);
+        setHasUnreadChats(false);
       } catch (err) {
         console.error('Failed to fetch messages:', err);
       } finally {

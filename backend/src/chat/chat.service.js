@@ -42,6 +42,40 @@ exports.createOrGetChat = async (userId, { listingId, tenantId, ownerId, interes
 };
 
 exports.getUserChats = async (userId) => {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    // Find all accepted interest requests involving the user
+    const acceptedInterests = await prisma.interestRequest.findMany({
+      where: {
+        status: 'ACCEPTED',
+        OR: [
+          { ownerId: userId },
+          { tenantId: userId }
+        ]
+      }
+    });
+
+    // Make sure each accepted interest request has a chat room
+    for (const interest of acceptedInterests) {
+      const existing = await chatRepo.findChatByParticipants(
+        interest.listingId,
+        interest.tenantId,
+        interest.ownerId
+      );
+      if (!existing) {
+        await chatRepo.createChat({
+          listingId: interest.listingId,
+          tenantId: interest.tenantId,
+          ownerId: interest.ownerId
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Failed to backfill missing chats in getUserChats:', err.message);
+  }
+
   return await chatRepo.findUserChats(userId);
 };
 

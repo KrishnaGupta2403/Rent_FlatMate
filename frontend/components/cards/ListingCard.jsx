@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 import { tenantService } from '../../services/tenantService';
@@ -14,6 +14,17 @@ export default function ListingCard({ listing, onFavoriteToggle, isFavoriteIniti
   const [loadingFav, setLoadingFav] = useState(false);
   const [compatibility, setCompatibility] = useState(listing.compatibility || null);
   const [loadingAi, setLoadingAi] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const imagesList = listing.images || [];
+
+  useEffect(() => {
+    if (imagesList.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % imagesList.length);
+    }, 3500); // 3.5 seconds interval
+    return () => clearInterval(interval);
+  }, [imagesList.length]);
 
   const toggleFavorite = async (e) => {
     e.preventDefault();
@@ -51,7 +62,7 @@ export default function ListingCard({ listing, onFavoriteToggle, isFavoriteIniti
     }
   };
 
-  const primaryImg = listing.images?.find(i => i.isPrimary)?.imageUrl || listing.images?.[0]?.imageUrl;
+  const currentImg = imagesList[currentImageIndex]?.imageUrl || null;
 
   return (
     <BorderGlow
@@ -68,14 +79,37 @@ export default function ListingCard({ listing, onFavoriteToggle, isFavoriteIniti
     >
       <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
         <div>
-          {primaryImg && (
+          {currentImg && (
             <div style={{ height: '180px', margin: '-20px -20px 16px -20px', overflow: 'hidden', borderRadius: '28px 28px 0 0', position: 'relative' }}>
               <img 
-                src={primaryImg.startsWith('http') ? primaryImg : `http://127.0.0.1:5000${primaryImg}`} 
-                alt={listing.title} 
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                key={currentImageIndex}
+                src={currentImg.startsWith('http') ? currentImg : `http://127.0.0.1:5000${currentImg}`} 
+                alt={`${listing.title} - Slide ${currentImageIndex + 1}`} 
+                style={{ width: '100%', height: '100%', objectFit: 'cover', animation: 'fadeIn 0.5s ease-in-out' }} 
                 onError={(e) => e.target.style.display = 'none'} 
               />
+              {imagesList.length > 1 && (
+                <div style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px', zIndex: 5 }}>
+                  {imagesList.map((_, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setCurrentImageIndex(idx);
+                      }}
+                      style={{ 
+                        width: '6px', 
+                        height: '6px', 
+                        borderRadius: '50%', 
+                        background: idx === currentImageIndex ? '#ffffff' : 'rgba(255, 255, 255, 0.4)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer'
+                      }} 
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -141,7 +175,7 @@ export default function ListingCard({ listing, onFavoriteToggle, isFavoriteIniti
 
         <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            By {listing.owner?.email?.split('@')[0] || 'Owner'}
+            By {listing.owner?.fullName || 'Owner'}
           </span>
           
           <Link href={`/tenant/listings/${listing.id}`} className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>

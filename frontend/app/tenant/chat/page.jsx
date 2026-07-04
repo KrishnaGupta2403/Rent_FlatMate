@@ -67,8 +67,8 @@ export default function TenantChatPage() {
                     transition: 'var(--transition)'
                   }}
                 >
-                  <div style={{ fontWeight: 600, fontSize: '0.9rem', textTransform: 'capitalize' }}>
-                    {chat.owner?.fullName?.split(' ')[0] || chat.owner?.name?.split(' ')[0] || chat.owner?.email?.split('@')[0] || `Owner #${chat.ownerId?.slice(0, 6)}`}
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                    {chat.owner?.fullName || chat.owner?.email || `Owner #${chat.ownerId?.slice(0, 6)}`}
                   </div>
                   <div style={{ fontSize: '0.78rem', color: selectedChat?.id === chat.id ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)', marginTop: '4px' }}>
                     Listing: {chat.listing?.title || `#${chat.listingId?.slice(0, 6)}`}
@@ -82,7 +82,7 @@ export default function TenantChatPage() {
               {selectedChat ? (
                 <ChatBox
                   chatId={selectedChat.id}
-                  recipientEmail={`Owner: ${selectedChat.owner?.email || selectedChat.ownerId?.slice(0, 8)}`}
+                  recipientEmail={`Owner: ${selectedChat.owner?.fullName || selectedChat.owner?.email || selectedChat.ownerId?.slice(0, 8)}`}
                 />
               ) : (
                 <div className="glass-panel" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-muted)' }}>
